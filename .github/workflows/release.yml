@@ -1,0 +1,54 @@
+name: Publish thesis template
+
+on:
+  push:
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check release tag against class version
+        run: |
+          class_version=$(awk -F '[{}]' '$1 == "\\ProvidesExplClass" && $2 == "fduthesis" {print $6}' src/fduthesis.cls)
+          if [[ -z "$class_version" ]]; then
+            echo "Could not read the version from src/fduthesis.cls" >&2
+            exit 1
+          fi
+          if [[ "$GITHUB_REF_NAME" != "v$class_version" ]]; then
+            echo "Release tag $GITHUB_REF_NAME does not match class version $class_version (expected v$class_version)." >&2
+            exit 1
+          fi
+
+      - name: Install Times New Roman for the build
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y cabextract poppler-utils
+          cd "$RUNNER_TEMP"
+          curl --fail --location --retry 3 https://downloads.sourceforge.net/corefonts/times32.exe -o times32.exe
+          echo 'db56595ec6ef5d3de5c24994f001f03b2a13e37cee27bc25c58f6f43e8f807ab  times32.exe' | sha256sum --check
+          mkdir -p texmf/fonts/truetype
+          cabextract -L -F '*.TTF' -d texmf/fonts/truetype times32.exe
+
+      - name: Build release archive
+        env:
+          FDU_TEX_ROOT: ${{ runner.temp }}/texmf
+        run: scripts/package-release.sh
+
+      - name: Verify archive and example
+        run: |
+          unzip -t release/fduthesis.zip
+          unzip -p release/fduthesis.zip thesis/thesis.pdf > "$RUNNER_TEMP/thesis.pdf"
+          python3 test/check-front-matter.py "$RUNNER_TEMP/thesis.pdf"
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: release/fduthesis.zip
+          fail_on_unmatched_files: true
