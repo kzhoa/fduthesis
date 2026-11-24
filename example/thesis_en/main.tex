@@ -1,0 +1,290 @@
+% !TeX program = xelatex
+% SPDX-License-Identifier: GPL-3.0-only
+
+% To use a project copy of SimSun, uncomment the next line and match its path and filename.
+% \AddToHook{fduthesis/cjk-font}{\setCJKmainfont[Path=fonts/,FontIndex=0,AutoFakeBold=2]{simsun.ttc}}
+\documentclass[lang=en]{fduthesis}
+
+\usepackage{booktabs}
+
+\usepackage[backend=biber,style=gb7714-2025]{biblatex}
+\addbibresource{reference.bib}
+
+\fdusetup{
+  % Uncomment the next line to number the main text i, ii, iii instead of 1, 2, 3.
+  % main-page-numbering = roman,
+  %
+  degree = master, type = academic, clc = TP3,
+  %
+  title = {顺序查找何时优于二分查找？},
+  title-en = {When Does a Linear Scan Beat Binary Search?},
+  %
+  author = {张三}, student-id = {123456789},
+  % Use 同等学力人员 for equivalent qualifications, or none otherwise.
+  % With lang=en, the cover adds 英文项目 automatically.
+  student-category = none,
+  %
+  supervisor = {李四}, supervisor-title = {教授},
+  committee = {李四教授, 王五副教授},
+  %
+  major = {计算机科学与技术}, department = {计算与智能创新学院},
+  date = {2026年6月30日},
+  %
+  keywords = {二分查找, 有序数组, 查询频率},
+  keywords-en = {binary search, sorted arrays, query frequency}
+}
+
+\begin{document}
+\frontmatter
+\makecoverpage
+\makecommittee
+\tableofcontents
+\begin{fdusummary}
+在按姓名排序的通讯录中查找一个人，可以从第一项开始逐项核对，也可以先看中间的一项，再根据比较结果只查前半段或后半段。二分查找能限制一次查询最多需要访问多少项，但如果经常要找的人恰好排在第一位，顺序查找往往只需查看一次。本文研究一个可以逐项核算的问题：在同一组有序数据上，第一项需要多常被查到，顺序查找的平均访问次数才会低于二分查找？为单独考察查询频率的影响，分析过程中固定数据的内容、排列次序和两种算法的访问规则，仅改变目标落在不同位置的概率。
+
+研究对象是包含七个互异键的升序数组，首先考虑每次查询的目标都在数组中的情形。访问一个位置并判断目标与该位置的键之间的大小关系，计为一次探查。顺序查找总是从首项开始，命中便停止。二分查找从第四项开始，根据比较结果选择左侧或右侧的三个候选位置，随后继续取中点。以查找第五项为例，算法先查看第四项，接着查看第六项，最后才在第五项命中。虽然第四项和第五项在数组中相邻，查到它们所需的探查次数分别为一和三。由此可见，数组位置对于两种算法有不同的含义，不能只按键与数组中点的距离估算二分查找的代价。
+
+本文先按查询目标列出两种算法的探查次数，再以查询概率对各列加权。七个位置等概率被查询时，顺序查找的探查次数从一至七逐项增加，平均为四次。二分查找有一个位置可在第一次命中，两个位置可在第二次命中，其余四个位置在第三次命中，平均为七分之十七次。这个基准同时给出了两种算法各自的最坏情况。只看最坏情况会选择二分查找，但这还不能回答在同一张通讯录上反复查询时应当采用哪种方法。
+
+随后令第一项被查询的概率为 $p$，把剩余概率等分给另外六项。查询第一项时，顺序查找只探查一次，二分查找需要三次。对其余六项各查一次，顺序查找共需二十七次，二分查找共需十四次。因此，提高首项查询概率有两种同时发生的效果：顺序查找获得更多一次命中的机会，二分查找则要更频繁地走到判定树的第三层。两种平均代价随首项概率呈线性变化，变化方向相反。解得交点为 $p=13/25$，此时两种算法平均均探查 $67/25$ 次。低于这一概率时二分查找占优，高于这一概率时顺序查找占优。
+
+为核对加权过程，本文将等概率查询和只查第一项分别代入公式。前者得到与逐键求和相同的平均值，后者得到顺序查找一次、二分查找三次，与实际查找路径一致。在交点处，两种算法的平均值相同，却没有一个位置需要恰好探查这么多次。这个分数表示按给定频率进行多次查询后，每次查询分摊到的探查次数。例如，在二十五次查询中安排十三次查询首项，其余六项各查两次，顺序查找和二分查找都刚好探查六十七次。把其中一次首项查询移到第四项，顺序查找便增加三次探查，二分查找却减少两次。这个例子说明，预测哪种算法更合适还需要知道热点落在哪个位置。
+
+将数组扩展到十五个键，并保持首项以外的成功查询等概率时，交点升至 $37/58$。回到七个键，若允许查询不存在的键，顺序查找遇到第一个更大的键即可停止。假设八个空档等概率，在成功查询中又有四分之三查询首项，则失败查询占全部请求的比例达到 $23/56$ 时，两种算法再次持平。将方法用于其他有序表时，可以先记录两种查找方式访问每个目标所需的次数，再按实际查询分布计算期望。这样可以看出哪些位置的查询左右了算法选择，也明确了由探查次数比较结果推断运行时间时，还需要另外测量每次访问的实际开销。
+\end{fdusummary}
+
+\begin{fdusummaryen}
+Binary search limits the number of probes needed to find any key in a sorted
+array, but a linear scan can find a frequently requested first key in a single
+probe. We compare successful searches on the same seven distinct keys, counting
+one inspection of an array element as one probe. With uniform queries, a linear
+scan averages four probes and binary search averages $17/7$. We then assign
+probability $p$ to the first key and divide the remaining probability equally
+among the other six. A linear scan takes one probe for the first key and
+a total of 27 probes across one search for each of the other six keys. The corresponding counts for
+binary search are three and 14. The expected costs coincide at $p=13/25$,
+when both methods average $67/25$ probes. For example, both need exactly
+67 probes for 13 requests for the first key and two for each remaining key. Above that threshold the linear scan
+uses fewer probes, although binary search still has the smaller worst-case
+cost. Substituting $p=1/7$ and $p=1$ recovers the uniform-query averages and
+the costs of finding the first key. The threshold depends on the location of
+the frequent key and the distribution of the remaining queries. Increasing the
+array to fifteen keys raises the first-key threshold to $37/58$. In the original
+array, suppose three quarters of successful queries ask for the first key and
+misses fall uniformly among the eight gaps. The linear scan then wins while
+fewer than $23/56$ of all queries miss.
+\end{fdusummaryen}
+\listoffigures
+\listoftables
+
+\mainmatter
+\chapter{Counting probes}
+Suppose a directory stores seven names in alphabetical order. A linear scan
+starts at the top of the list. Binary search starts at the fourth name, then
+searches the half that could still contain the target. We count one probe each
+time a search inspects a name, following the comparison model used for ordered
+search by Knuth\cite{knuth1998}.
+
+\begin{table}[htbp]
+  \centering
+  \caption{Probes needed to find each key}\label{tab:counts}
+  \begin{tabular}{lrrrrrrr}
+    \toprule
+    Key position & 1 & 2 & 3 & 4 & 5 & 6 & 7 \\
+    \midrule
+    Linear scan   & 1 & 2 & 3 & 4 & 5 & 6 & 7 \\
+    Binary search & 3 & 2 & 3 & 1 & 3 & 2 & 3 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+The path in Figure~\ref{fig:path} explains the entry for key 5 in
+Table~\ref{tab:counts}. The first probe rules out keys 1 through 4.
+The second leaves a single candidate, which the third probe confirms.
+
+\begin{figure}[htbp]
+  \centering
+  \input{figures/binary-search-path}%
+  \caption{Binary search for the fifth key}\label{fig:path}
+\end{figure}
+
+\section{What one probe measures}
+A search that visits positions 4, 6 and 5 costs three probes even if the
+implementation tests equality and order in separate instructions. The model
+counts the records that must be inspected. It is useful, for example, when a
+record has to be fetched before either test can proceed. Translating a probe
+count into elapsed time would also require the cost of fetching that record.
+A scan reads consecutive records, whereas the midpoint rule can jump between
+distant locations.
+
+For binary search, the candidates always occupy a closed interval. If the
+middle key is too small, every key to its left is also too small, so the next
+interval begins immediately to its right. At the end of the path in
+Figure~\ref{fig:path}, the interval consists of position 5 alone. It must
+still be inspected. Stopping as soon as the two endpoints coincide would
+turn this successful search into a miss.
+
+\chapter{Changing the query distribution}
+Let $p$ be the probability that a query asks for the first key. Each of the
+other six keys has probability $(1-p)/6$. Summing the last six columns of
+Table~\ref{tab:counts} gives 27 probes for the linear scan and 14 for binary
+search. Their expected costs are therefore
+\begin{equation}
+  L(p)=p+27(1-p)/6, \qquad B(p)=3p+14(1-p)/6.
+  \label{eq:cost}
+\end{equation}
+Solving $L(p)=B(p)$ gives $p=13/25$. Above that threshold the linear scan
+wins. At the threshold both searches average $67/25$ probes. A worst-case
+bound alone would miss this change in their ranking.
+
+\section{Accounting for a batch of requests}
+The break-even distribution has a convenient whole-number interpretation.
+Imagine 25 requests written on index cards: 13 for the first key and two
+for each of the other six. The linear scan spends 13 probes on the first
+pile and $2\times27=54$ on the rest. Binary search spends 39 probes on the
+first pile and 28 on the rest. Both totals are 67, independently of the order
+in which the cards are drawn.
+
+Now change one card from key 1 to key 4. The linear scan spends three extra
+probes on that request, while binary search saves two. The new totals are 70
+and 65. Changing the card to key 2 instead produces totals of 68 and 66.
+Both edits reduce the number of requests for key 1 by exactly one. Their
+different effects show why the threshold from Equation~\ref{eq:cost} depends
+on how requests for the remaining keys are distributed.
+
+For an observed batch, let $c_i$ be the number of requests for key $i$.
+Subtracting the two rows of Table~\ref{tab:counts} gives the total excess
+cost of the scan over binary search:
+\begin{equation}
+  D=-2c_1+3c_4+2c_5+4c_6+4c_7.
+  \label{eq:batch}
+\end{equation}
+The two methods tie on keys 2 and 3, so those requests contribute zero to
+the difference. A negative $D$ favors the scan. This calculation can be
+applied directly to counts from a directory log without first fitting a
+probability distribution.
+
+\chapter{A larger directory}
+\section{Summing probes by depth}
+Consider directories of size $n=2^h-1$. Each midpoint splits the remaining
+keys into two groups of equal size. There is one key found on probe 1, two
+more on probe 2, and $2^{j-1}$ keys first found on probe $j$. Write $S_h$
+for the total binary-search cost of looking up every key once. Growing the
+tree by a level adds $2^h$ keys at depth $h+1$, so
+\begin{equation}
+  S_1=1, \qquad S_{h+1}=S_h+(h+1)2^h .
+  \label{eq:level}
+\end{equation}
+For seven keys this gives $S_3=17$. The next eight keys cost four probes
+each, bringing the fifteen-key total to 49. The linear scan, by comparison,
+uses the sum of the positions, $T_n=n(n+1)/2$, or 120 probes for fifteen keys.
+
+\section{How much weight must the first key carry?}
+On the first key the scan saves $h-1$ probes. On the remaining keys, looking
+up each one once costs the scan $T_n-1$ probes and binary search $S_h-h$.
+Let $R=(T_n-1)-(S_h-h)$ denote this excess. If the first key receives
+probability $p$ and the other keys share the rest equally, the scan breaks
+even when its savings on the first key pay for the excess on the rest:
+\begin{equation}
+  p(h-1)=(1-p)\frac{R}{n-1}.
+  \label{eq:size-threshold}
+\end{equation}
+
+\begin{table}[htbp]
+  \centering
+  \caption{First-key frequency required for equal expected cost}
+  \label{tab:sizes}
+  \begin{tabular}{rrrrr}
+    \toprule
+    Keys $n$ & Levels $h$ & Scan total $T_n$ & Binary total $S_h$ & Threshold $p$ \\
+    \midrule
+    3  & 2 &   6 &   5 & $1/2$ \\
+    7  & 3 &  28 &  17 & $13/25$ \\
+    15 & 4 & 120 &  49 & $37/58$ \\
+    31 & 5 & 496 & 129 & $371/491$ \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+Suppose the first key gets three requests out of five. In the seven-key
+directory that share is above $13/25$, but in the fifteen-key directory it
+falls below $37/58$. The same access pattern therefore favors different
+methods at these two sizes. Table~\ref{tab:sizes} uses complete trees so
+that each cost can be checked from Equation~\ref{eq:level}. For an arbitrary
+size, the same accounting works after recording the actual midpoint depths.
+
+\chapter{When a requested key is absent}
+\section{Counting the gaps}
+Return to seven keys. An unsuccessful request lies in one of eight gaps:
+before the first key, between consecutive keys, or after the last key.
+A scan may stop at the first key larger than the target because all later
+keys are larger still. A request between keys 2 and 3 therefore costs three
+probes. Binary search for that request probes positions 4, 2 and 3, leaving
+an empty interval. In this complete tree every unsuccessful path takes three
+probes.
+
+\begin{table}[htbp]
+  \centering
+  \caption{Cost of an unsuccessful search, by insertion position}
+  \label{tab:gaps}
+  \begin{tabular}{lrrrrrrrr}
+    \toprule
+    Keys smaller than target & 0 & 1 & 2 & 3 & 4 & 5 & 6 & 7 \\
+    \midrule
+    Linear scan   & 1 & 2 & 3 & 4 & 5 & 6 & 7 & 7 \\
+    Binary search & 3 & 3 & 3 & 3 & 3 & 3 & 3 & 3 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+The last two columns of Table~\ref{tab:gaps} cost the scan the same amount.
+Both require inspecting the final record. Passing the end of the directory
+adds no record inspection. Under equally likely gaps the scan averages
+$35/8$ probes per miss, an excess of $11/8$ over binary search.
+
+\section{Combining hits and misses}
+Let $q$ be the fraction of all requests that miss, and suppose three quarters
+of the successful requests ask for the first key. The other six keys divide
+the remaining successful requests equally. Substituting $p=3/4$ into
+Equation~\ref{eq:cost} gives $15/8$ probes for a successful scan and $17/6$
+for a successful binary search. The scan saves $23/24$ probes per hit. If
+the eight gaps are equally likely conditional on a miss, the expected excess
+cost of the scan per request is
+\begin{equation}
+  -(1-q)\frac{23}{24}+q\frac{11}{8}=\frac{56q-23}{24}.
+  \label{eq:miss}
+\end{equation}
+At $q=1/4$ the scan saves $3/8$ probes per request. At $q=1/2$ it costs
+an extra $5/24$. The crossing occurs at $q=23/56$. The location of misses
+matters as much as their frequency: if all misses fall before the first key,
+each miss saves the scan two probes, and both hits and misses now favor it.
+
+\printbibliography
+
+\appendix
+\chapter{Checking the endpoints}
+At $p=1/7$ all seven keys are equally likely. Equation~\ref{eq:cost}
+gives $L=4$ and $B=17/7$, the row averages in Table~\ref{tab:counts}.
+At $p=1$ every query asks for the first key, and the same equation gives
+one and three probes respectively.
+
+\section{An integer check on the mixed workload}
+Equation~\ref{eq:miss} predicts a tie for 23 misses in every 56 requests.
+To reconstruct a batch with whole counts in every gap and at every key, use
+448 requests. Of these, 184 miss, giving 23 per gap. The other 264 succeed:
+198 ask for the first key and 11 ask for each of the other six.
+For the linear scan the hits cost $198+11\times27=495$ probes and the
+misses cost $23\times35=805$. For binary search the hits cost
+$198\times3+11\times14=748$ and the misses cost $184\times3=552$.
+Both methods use exactly 1,300 probes. This check enumerates the requests
+directly, so it also tests that the first-key probability was applied to
+the successful requests alone.
+
+\backmatter
+
+\begin{acknowledgements}
+I thank my supervisor for suggesting that I check both endpoints of the
+probability model.
+\end{acknowledgements}
+\makeauthorization
+\end{document}

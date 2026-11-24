@@ -1,0 +1,24 @@
+\documentclass[lang=en]{fduthesis}
+\fdusetup{main-page-numbering=roman}
+\ExplSyntaxOn
+\newcommand*\checkpage[1]{
+  \str_if_eq:eeF {\thepage}{#1}
+    { \errmessage{Expected~page~#1,~got~\thepage} }
+}
+\ExplSyntaxOff
+\begin{document}
+\frontmatter
+\thispagestyle{empty}Opening page.
+\tableofcontents
+\checkpage{I}
+\mainmatter
+\chapter{Main text}\checkpage{i}\label{ch:main}
+See the appendix on page~\pageref{ch:appendix}.
+\appendix
+\chapter{Appendix material}\checkpage{ii}\label{ch:appendix}
+The main text starts on page~\pageref{ch:main}.
+\backmatter
+\begin{acknowledgements}
+\checkpage{iii}
+\end{acknowledgements}
+\end{document}

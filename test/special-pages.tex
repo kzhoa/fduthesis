@@ -1,0 +1,30 @@
+% Leave the three hyphenated required fields empty to exercise their diagnostics.
+\documentclass{fduthesis}
+\fdusetup{
+  title={测试}, author={张三}, clc={TP3}, supervisor={李四},
+  major={计算机}, department={计算机学院}, date={2026},
+  keywords={甲,乙,丙}, keywords-en={one,two,three}
+}
+\newcommand*\LayoutDimensions{%
+  \the\textwidth,\the\textheight,\the\oddsidemargin,\the\evensidemargin,\the\topmargin}
+\newcommand*\CheckLayout{%
+  \edef\ActualLayout{\LayoutDimensions}%
+  \ifx\ActualLayout\ExpectedLayout\else
+    \errmessage{Expected layout \ExpectedLayout, got \ActualLayout}%
+  \fi}
+\makespine
+\begin{document}
+\newgeometry{left=42mm,right=35mm,top=41mm,bottom=36mm}
+\edef\ExpectedLayout{\LayoutDimensions}
+\makecoverpage
+\CheckLayout
+\begin{fdusummary}摘要正文。\end{fdusummary}
+\CheckLayout
+\newgeometry{margin=45mm}
+\edef\ExpectedLayout{\LayoutDimensions}
+\begin{fdusummaryen}Abstract text.\end{fdusummaryen}
+\CheckLayout
+\makeauthorization
+\CheckLayout
+\AddToHook{enddocument/afterlastpage}{\CheckLayout}
+\end{document}
